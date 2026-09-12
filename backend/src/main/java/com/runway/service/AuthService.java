@@ -65,6 +65,18 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
+    public UserDto getCurrentUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BadCredentialsException("User not found"));
+        return UserDto.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .defaultCurrency(user.getDefaultCurrency() != null ? user.getDefaultCurrency() : "INR")
+                .monthlyIncome(user.getMonthlyIncome())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
     public AuthResult login(LoginRequest request) {
         String cleanEmail = request.getEmail().toLowerCase().trim();
         User user = userRepository.findByEmail(cleanEmail)

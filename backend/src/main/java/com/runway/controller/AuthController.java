@@ -40,6 +40,15 @@ public class AuthController {
                 .body(result.response());
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> me(org.springframework.security.core.Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof com.runway.security.UserDetailsImpl userDetails)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).build();
+        }
+        UserDto userDto = authService.getCurrentUser(userDetails.getId());
+        return ResponseEntity.ok(userDto);
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(HttpServletRequest request) {
         String refreshToken = jwtUtil.getRefreshTokenFromCookies(request);

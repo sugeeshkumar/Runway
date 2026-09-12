@@ -58,8 +58,8 @@ public class JwtUtil {
                 .path("/api/v1/auth")
                 .maxAge(refreshExpirationMs / 1000)
                 .httpOnly(true)
-                .secure(false) // Set to true in production HTTPS
-                .sameSite("Lax")
+                .secure(true)
+                .sameSite("None")
                 .build();
     }
 

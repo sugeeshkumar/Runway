@@ -6,8 +6,8 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: String) => Promise<void>;
-  signup: (email: string, password: String) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -22,15 +22,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initAuth = async () => {
       if (token) {
         try {
-          // Attempt refresh to ensure valid session
-          const res = await api.post<AuthResponse>('/auth/refresh');
-          setToken(res.data.accessToken);
-          localStorage.setItem('runway_access_token', res.data.accessToken);
-          setUser(res.data.user);
+          // Attempt to fetch profile using current Bearer access token
+          const res = await api.get<User>('/auth/me');
+          setUser(res.data);
         } catch {
-          setToken(null);
-          setUser(null);
-          localStorage.removeItem('runway_access_token');
+          // If /auth/me fails (e.g. token expired), attempt token refresh
+          try {
+            const refreshRes = await api.post<AuthResponse>('/auth/refresh');
+            setToken(refreshRes.data.accessToken);
+            localStorage.setItem('runway_access_token', refreshRes.data.accessToken);
+            setUser(refreshRes.data.user);
+          } catch {
+            setToken(null);
+            setUser(null);
+            localStorage.removeItem('runway_access_token');
+          }
         }
       }
       setLoading(false);
@@ -38,14 +44,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
-  const login = async (email: string, password: String) => {
+  const login = async (email: string, password: string) => {
     const res = await api.post<AuthResponse>('/auth/login', { email, password });
     setToken(res.data.accessToken);
     setUser(res.data.user);
     localStorage.setItem('runway_access_token', res.data.accessToken);
   };
 
-  const signup = async (email: string, password: String) => {
+  const signup = async (email: string, password: string) => {
     const res = await api.post<AuthResponse>('/auth/signup', { email, password });
     setToken(res.data.accessToken);
     setUser(res.data.user);
