@@ -5,6 +5,8 @@ import { UndoToast, UndoToastData } from './UndoToast';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import { ArrowUpRight, Sparkles, Check, Mic, MicOff, AlertCircle, Copy } from 'lucide-react';
+import * as expenseRepository from '../data/expenseRepository';
+import * as categoryRepository from '../data/categoryRepository';
 
 interface QuickCaptureProps {
   categories: Category[];
@@ -107,8 +109,7 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ categories, onExpens
     setIsSaving(true);
     setPendingDuplicate(null);
     try {
-      const saveRes = await api.post('/expenses', expenseData);
-      const savedItem = saveRes.data;
+      const savedItem = await expenseRepository.createExpense(expenseData);
 
       setText('');
       setDraft(null);
@@ -155,6 +156,13 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ categories, onExpens
       if (!inputText.includes('$') && !inputText.includes('€') && !inputText.includes('£') && !inputText.toLowerCase().includes('usd')) {
         parsed.currency = userCurrency;
       }
+      if (parsed.categoryName) {
+        const match = await categoryRepository.findCategoryByName(parsed.categoryName);
+        if (match) {
+          parsed.categoryId = match.id;
+          parsed.categoryName = match.name;
+        }
+      }
       if (!parsed.categoryId && categories.length > 0) {
         parsed.categoryId = categories[0].id;
         parsed.categoryName = categories[0].name;
@@ -176,10 +184,10 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ categories, onExpens
         if (!forceSave) {
           // Perform duplicate check
           try {
-            const dupCheck = await api.post('/expenses/check-duplicate', payload);
-            if (dupCheck.data.duplicate) {
+            const dupCheck = await expenseRepository.checkDuplicateExpense(payload);
+            if (dupCheck.duplicate) {
               setPendingDuplicate({
-                timeAgoMessage: dupCheck.data.timeAgoMessage || 'recorded recently',
+                timeAgoMessage: dupCheck.timeAgoMessage || 'recorded recently',
                 draftToSave: payload,
               });
               setIsParsing(false);
@@ -199,7 +207,26 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ categories, onExpens
       }
     } catch (err) {
       console.error('NLP parse/capture error', err);
-      setVoiceState('FAILURE');
+      // Fallback simple parsing when NLP backend is offline
+      const numMatch = inputText.match(/(\d+(?:\.\d{1,2})?)/);
+      if (numMatch && isSubmitDirect && categories.length > 0) {
+        const amount = parseFloat(numMatch[1]);
+        const defaultCat = categories[0];
+        const payload = {
+          amount,
+          currency: userCurrency,
+          categoryId: defaultCat.id,
+          description: inputText.trim(),
+          occurredAt: new Date().toISOString(),
+          source: 'PARSED_TEXT',
+          rawInput: inputText,
+        };
+        await executeSaveExpense(payload, inputText);
+      } else {
+        setSpeechError('NLP parser endpoint unavailable (offline).');
+        setTimeout(() => setSpeechError(null), 4000);
+        setVoiceState('FAILURE');
+      }
     } finally {
       setIsParsing(false);
     }
@@ -217,10 +244,17 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ categories, onExpens
 
     debounceTimerRef.current = setTimeout(() => {
       api.post<ParsedExpenseDraft>('/nlp/parse', { text })
-        .then((res) => {
+        .then(async (res) => {
           const parsed = res.data;
           if (!text.includes('$') && !text.includes('€') && !text.includes('£') && !text.toLowerCase().includes('usd')) {
             parsed.currency = userCurrency;
+          }
+          if (parsed.categoryName) {
+            const match = await categoryRepository.findCategoryByName(parsed.categoryName);
+            if (match) {
+              parsed.categoryId = match.id;
+              parsed.categoryName = match.name;
+            }
           }
           if (!parsed.categoryId && categories.length > 0) {
             parsed.categoryId = categories[0].id;
@@ -252,10 +286,10 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ categories, onExpens
 
     // Duplicate check for manual confirmation
     try {
-      const dupCheck = await api.post('/expenses/check-duplicate', payload);
-      if (dupCheck.data.duplicate) {
+      const dupCheck = await expenseRepository.checkDuplicateExpense(payload);
+      if (dupCheck.duplicate) {
         setPendingDuplicate({
-          timeAgoMessage: dupCheck.data.timeAgoMessage || 'recorded recently',
+          timeAgoMessage: dupCheck.timeAgoMessage || 'recorded recently',
           draftToSave: payload,
         });
         return;
@@ -280,7 +314,7 @@ export const QuickCapture: React.FC<QuickCaptureProps> = ({ categories, onExpens
 
   const handleUndo = async (expenseId: string) => {
     try {
-      await api.delete(`/expenses/${expenseId}`);
+      await expenseRepository.deleteExpense(expenseId);
       setActiveToast(null);
       setSavedSuccessMsg(null);
       onExpenseAdded();

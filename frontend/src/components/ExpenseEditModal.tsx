@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Expense, Category } from '../types';
 import api from '../api/client';
 import { X, Trash2, Check } from 'lucide-react';
+import * as expenseRepository from '../data/expenseRepository';
 
 interface ExpenseEditModalProps {
   expense: Expense | null;
@@ -47,7 +48,7 @@ export const ExpenseEditModal: React.FC<ExpenseEditModalProps> = ({
 
     setSaving(true);
     try {
-      await api.put(`/expenses/${expense.id}`, {
+      await expenseRepository.updateExpense(expense.id, {
         amount,
         currency,
         categoryId,
@@ -60,7 +61,7 @@ export const ExpenseEditModal: React.FC<ExpenseEditModalProps> = ({
       onExpenseUpdated();
       onClose();
     } catch (err) {
-      console.error('Failed to update expense', err);
+      console.error('Failed to update expense in local storage', err);
     } finally {
       setSaving(false);
     }
@@ -71,11 +72,11 @@ export const ExpenseEditModal: React.FC<ExpenseEditModalProps> = ({
 
     setDeleting(true);
     try {
-      await api.delete(`/expenses/${expense.id}`);
+      await expenseRepository.deleteExpense(expense.id);
       onExpenseUpdated();
       onClose();
     } catch (err) {
-      console.error('Failed to delete expense', err);
+      console.error('Failed to delete expense from local storage', err);
     } finally {
       setDeleting(false);
     }

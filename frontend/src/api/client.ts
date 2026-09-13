@@ -20,7 +20,7 @@ const api = axios.create({
   },
 });
 
-// Attach JWT access token to requests
+// Attach JWT access token to requests if present
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('runway_access_token');
   if (token && config.headers) {
@@ -29,12 +29,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle token expiration / refresh automatically
+// Handle token expiration / refresh automatically without global page redirects
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/')) {
+    const hasToken = Boolean(localStorage.getItem('runway_access_token'));
+    if (
+      error.response?.status === 401 &&
+      hasToken &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/auth/')
+    ) {
       originalRequest._retry = true;
       try {
         const res = await axios.post(`${getApiBaseUrl()}/auth/refresh`, {}, { withCredentials: true });
@@ -44,7 +50,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         localStorage.removeItem('runway_access_token');
-        window.location.href = '/';
+        // Do NOT redirect to '/' or clear local application state. Reject promise gracefully.
         return Promise.reject(refreshError);
       }
     }

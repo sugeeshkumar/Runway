@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SavingsGoal } from '../types';
-import api from '../api/client';
+import * as savingsGoalRepository from '../data/savingsGoalRepository';
 import { X, Target } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
@@ -43,7 +43,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
     setError(null);
 
     try {
-      await api.post('/goals', {
+      await savingsGoalRepository.createSavingsGoal({
         name: name.trim(),
         targetAmount: num,
         targetDate: targetDate ? targetDate : null,
@@ -56,7 +56,7 @@ export const CreateGoalModal: React.FC<CreateGoalModalProps> = ({
       setTargetDate('');
     } catch (err: any) {
       console.error('Failed to create goal', err);
-      setError(err.response?.data?.message || 'Failed to create goal');
+      setError(err?.message || 'Failed to create goal');
     } finally {
       setSubmitting(false);
     }

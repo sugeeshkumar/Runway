@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { SavingsGoal } from '../types';
 import { formatCurrency } from '../utils/currency';
-import api from '../api/client';
+import * as savingsGoalRepository from '../data/savingsGoalRepository';
 import { CreateGoalModal } from '../components/CreateGoalModal';
 import { AddContributionModal } from '../components/AddContributionModal';
 import { Target, Plus, PlusCircle, Calendar, Sparkles, Trash2, CheckCircle2, TrendingUp } from 'lucide-react';
@@ -22,8 +22,8 @@ export const SavingsGoalsPage: React.FC<SavingsGoalsPageProps> = ({ userCurrency
   const fetchGoals = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get<SavingsGoal[]>('/goals');
-      setGoals(res.data);
+      const data = await savingsGoalRepository.getSavingsGoals();
+      setGoals(data);
     } catch (err) {
       console.error('Failed to fetch savings goals', err);
     } finally {
@@ -38,7 +38,7 @@ export const SavingsGoalsPage: React.FC<SavingsGoalsPageProps> = ({ userCurrency
   const handleDeleteGoal = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this savings goal?')) return;
     try {
-      await api.delete(`/goals/${id}`);
+      await savingsGoalRepository.deleteSavingsGoal(id);
       fetchGoals();
     } catch (err) {
       console.error('Failed to delete goal', err);
@@ -47,7 +47,7 @@ export const SavingsGoalsPage: React.FC<SavingsGoalsPageProps> = ({ userCurrency
 
   const handleDeleteContribution = async (goalId: string, contribId: string) => {
     try {
-      await api.delete(`/goals/${goalId}/contributions/${contribId}`);
+      await savingsGoalRepository.deleteContribution(goalId, contribId);
       fetchGoals();
     } catch (err) {
       console.error('Failed to delete contribution', err);

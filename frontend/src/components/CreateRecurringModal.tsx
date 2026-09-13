@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Category, Cadence, RecurringTemplate, CreateRecurringRequest } from '../types';
-import api from '../api/client';
+import { Category, Cadence, RecurringTemplate } from '../types';
+import * as recurringRepository from '../data/recurringRepository';
 import { X, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
@@ -73,7 +73,7 @@ export const CreateRecurringModal: React.FC<CreateRecurringModalProps> = ({
     setSubmitting(true);
     setError(null);
 
-    const payload: CreateRecurringRequest = {
+    const payload = {
       description: description.trim(),
       categoryId,
       amount: numAmount,
@@ -84,15 +84,15 @@ export const CreateRecurringModal: React.FC<CreateRecurringModalProps> = ({
 
     try {
       if (editingTemplate) {
-        await api.put(`/recurring/${editingTemplate.id}`, payload);
+        await recurringRepository.updateRecurringExpense(editingTemplate.id, payload);
       } else {
-        await api.post('/recurring', payload);
+        await recurringRepository.createRecurringExpense(payload);
       }
       onSaved();
       onClose();
     } catch (err: any) {
       console.error('Failed to save recurring template', err);
-      setError(err.response?.data?.message || 'Failed to save recurring template');
+      setError(err?.message || 'Failed to save recurring template');
     } finally {
       setSubmitting(false);
     }

@@ -5,6 +5,8 @@ import { CategoryIcon } from '../components/CategoryIcon';
 import { formatCurrency } from '../utils/currency';
 import api from '../api/client';
 import { ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
+import * as expenseRepository from '../data/expenseRepository';
+import * as categoryRepository from '../data/categoryRepository';
 
 interface DashboardPageProps {
   onNavigateToHistory: () => void;
@@ -30,15 +32,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const [sumRes, catRes] = await Promise.all([
-        api.get<DashboardSummary>('/dashboard/summary'),
-        api.get<Category[]>('/categories'),
-      ]);
-      setSummary(sumRes.data);
-      setCategories(catRes.data);
+      const cats = await categoryRepository.getCategories();
+      setCategories(cats);
+
+      const localSummary = await expenseRepository.getLocalDashboardSummary('INR');
+      setSummary(localSummary);
     } catch (err: any) {
       console.error('Failed to load dashboard summary', err);
-      setError(err.response?.data?.message || 'Unable to load financial summary. Please check your connection.');
+      setError(err?.message || 'Unable to load financial summary.');
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { InsightResponse, InsightItem, AnalyticsPeriod } from '../types';
 import api from '../api/client';
 import { Sparkles, TrendingUp, TrendingDown, AlertCircle, CheckCircle2, Store, Calendar, ArrowUpRight } from 'lucide-react';
+import * as expenseRepository from '../data/expenseRepository';
 
 interface SmartInsightsSectionProps {
   period: AnalyticsPeriod;
@@ -20,14 +21,14 @@ export const SmartInsightsSection: React.FC<SmartInsightsSectionProps> = ({
   const fetchInsights = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<InsightResponse>(`/insights?period=${period}`);
-      setData(res.data);
+      const insightsData = await expenseRepository.getLocalSmartInsights(period, userCurrency);
+      setData(insightsData);
     } catch (err) {
-      console.error('Failed to fetch smart financial insights', err);
+      console.error('Failed to fetch smart financial insights from local storage', err);
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [period, userCurrency]);
 
   useEffect(() => {
     fetchInsights();

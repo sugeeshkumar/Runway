@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SavingsGoal } from '../types';
-import api from '../api/client';
+import * as savingsGoalRepository from '../data/savingsGoalRepository';
 import { X, PlusCircle } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
@@ -37,7 +37,7 @@ export const AddContributionModal: React.FC<AddContributionModalProps> = ({
     setError(null);
 
     try {
-      await api.post(`/goals/${goal.id}/contributions`, {
+      await savingsGoalRepository.addContribution(goal.id, {
         amount: num,
         note: note.trim() ? note.trim() : null,
       });
@@ -47,7 +47,7 @@ export const AddContributionModal: React.FC<AddContributionModalProps> = ({
       setNote('');
     } catch (err: any) {
       console.error('Failed to add contribution', err);
-      setError(err.response?.data?.message || 'Failed to add contribution');
+      setError(err?.message || 'Failed to add contribution');
     } finally {
       setSubmitting(false);
     }

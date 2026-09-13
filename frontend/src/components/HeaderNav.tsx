@@ -1,6 +1,5 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Sun, Moon, LogOut } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 
 export type NavTabType =
   | 'dashboard'
@@ -27,7 +26,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   darkMode,
   onToggleDarkMode,
 }) => {
-  const { user, logout } = useAuth();
 
   const titleMap: Record<NavTabType, string> = {
     dashboard: 'Dashboard',
@@ -56,7 +54,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           </span>
         </div>
 
-        {/* Right User Actions (Mobile Header Controls) */}
+        {/* Right Controls */}
         <div className="flex md:hidden items-center space-x-1">
           <button
             onClick={onToggleDarkMode}
@@ -66,17 +64,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           >
             {darkMode ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-
-          {user && (
-            <button
-              onClick={logout}
-              className="p-1.5 rounded text-ink-secondary dark:text-ink-darkSecondary hover:bg-stone-200/50 dark:hover:bg-stone-800 transition-colors cursor-pointer"
-              title="Log out"
-              aria-label="Log out"
-            >
-              <LogOut size={16} />
-            </button>
-          )}
         </div>
       </div>
     </header>

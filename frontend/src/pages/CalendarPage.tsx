@@ -3,8 +3,9 @@ import { CalendarDaySpend, Category, Expense } from '../types';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { ExpenseEditModal } from '../components/ExpenseEditModal';
 import { formatCurrency } from '../utils/currency';
-import api from '../api/client';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, ArrowUpRight } from 'lucide-react';
+import * as expenseRepository from '../data/expenseRepository';
+import * as categoryRepository from '../data/categoryRepository';
 
 interface CalendarPageProps {
   userCurrency?: string;
@@ -32,12 +33,12 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({
   const fetchCalendarData = useCallback(async () => {
     setLoading(true);
     try {
-      const [calRes, catRes] = await Promise.all([
-        api.get<CalendarDaySpend[]>(`/expenses/calendar?year=${year}&month=${month}`),
-        api.get<Category[]>('/categories'),
+      const [calData, catList] = await Promise.all([
+        expenseRepository.getLocalCalendarDays(year, month),
+        categoryRepository.getCategories(),
       ]);
-      setDaysData(calRes.data);
-      setCategories(catRes.data);
+      setDaysData(calData);
+      setCategories(catList);
     } catch (err) {
       console.error('Failed to fetch calendar data', err);
     } finally {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Category } from '../types';
-import api from '../api/client';
+import * as budgetRepository from '../data/budgetRepository';
 import { X, Check, Trash2 } from 'lucide-react';
 
 interface BudgetModalProps {
@@ -43,7 +43,7 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
 
     setSaving(true);
     try {
-      await api.post('/budgets', {
+      await budgetRepository.createBudget({
         categoryId: categoryId === 'overall' ? null : categoryId,
         periodMonth,
         amount,
@@ -64,7 +64,7 @@ export const BudgetModal: React.FC<BudgetModalProps> = ({
 
     setDeleting(true);
     try {
-      await api.delete(`/budgets/${initialBudgetId}`);
+      await budgetRepository.deleteBudget(initialBudgetId);
       onBudgetUpdated();
       onClose();
     } catch (err) {

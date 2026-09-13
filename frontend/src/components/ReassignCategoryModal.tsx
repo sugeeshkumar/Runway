@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Category } from '../types';
-import api from '../api/client';
+import * as categoryRepository from '../data/categoryRepository';
 import { AlertTriangle, X, Check } from 'lucide-react';
 
 interface ReassignCategoryModalProps {
@@ -33,7 +33,7 @@ export const ReassignCategoryModal: React.FC<ReassignCategoryModalProps> = ({
 
     setDeleting(true);
     try {
-      await api.delete(`/categories/${categoryToDelete.id}?reassignTo=${targetId}`);
+      await categoryRepository.deleteCategory(categoryToDelete.id, targetId);
       onCategoryDeleted();
       onClose();
     } catch (err) {

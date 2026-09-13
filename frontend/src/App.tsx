@@ -16,7 +16,7 @@ import { SidebarNav } from './components/SidebarNav';
 import { BottomNavBar } from './components/BottomNavBar';
 import { QuickCapture } from './components/QuickCapture';
 import { Category } from './types';
-import api from './api/client';
+import * as categoryRepository from './data/categoryRepository';
 import { X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -50,8 +50,8 @@ const AppRoutes: React.FC = () => {
   const fetchCategories = useCallback(async () => {
     if (!user) return;
     try {
-      const res = await api.get<Category[]>('/categories');
-      setCategories(res.data);
+      const cats = await categoryRepository.getCategories();
+      setCategories(cats);
     } catch (err) {
       console.error('Failed to load categories', err);
     }
@@ -63,24 +63,10 @@ const AppRoutes: React.FC = () => {
   }, [fetchCategories, triggerGlobalRefresh]);
 
   useEffect(() => {
-    if (user) {
-      fetchCategories();
-    }
-  }, [user, fetchCategories]);
+    fetchCategories();
+  }, [fetchCategories]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-canvas-light dark:bg-canvas-dark flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-stone-400 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <AuthPage />;
-  }
-
-  const userCurrency = user.defaultCurrency || 'INR';
+  const userCurrency = user?.defaultCurrency || localStorage.getItem('runway_default_currency') || 'INR';
 
   return (
     <div className="min-h-screen bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary transition-all">

@@ -146,19 +146,6 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
           {darkMode ? <Sun size={16} /> : <Moon size={16} />}
           {!isCollapsed && <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>}
         </button>
-
-        {user && (
-          <button
-            onClick={logout}
-            className={`w-full flex items-center ${
-              isCollapsed ? 'justify-center p-2' : 'space-x-3 px-3 py-2'
-            } rounded text-xs font-medium text-clay-600 dark:text-clay-400 hover:bg-clay-50 dark:hover:bg-stone-800/60 transition-colors cursor-pointer`}
-            title="Log Out"
-          >
-            <LogOut size={16} />
-            {!isCollapsed && <span className="truncate font-mono text-[11px]">{user.email}</span>}
-          </button>
-        )}
       </div>
     </aside>
   );

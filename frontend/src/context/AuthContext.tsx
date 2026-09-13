@@ -2,8 +2,28 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthResponse } from '../types';
 import api from '../api/client';
 
+const getLocalItem = (key: string): string | null => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return localStorage.getItem(key);
+    }
+  } catch {
+    // Ignore error in non-browser or mock environments
+  }
+  return null;
+};
+
+export const DEFAULT_LOCAL_USER: User = {
+  id: 'local-user',
+  email: 'local@device',
+  defaultCurrency: getLocalItem('runway_default_currency') || 'INR',
+  monthlyIncome: getLocalItem('runway_monthly_income')
+    ? parseFloat(getLocalItem('runway_monthly_income')!)
+    : null,
+};
+
 interface AuthContextType {
-  user: User | null;
+  user: User;
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -14,58 +34,56 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User>(DEFAULT_LOCAL_USER);
   const [token, setToken] = useState<string | null>(localStorage.getItem('runway_access_token'));
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const initAuth = async () => {
       if (token) {
         try {
-          // Attempt to fetch profile using current Bearer access token
           const res = await api.get<User>('/auth/me');
           setUser(res.data);
         } catch {
-          // If /auth/me fails (e.g. token expired), attempt token refresh
-          try {
-            const refreshRes = await api.post<AuthResponse>('/auth/refresh');
-            setToken(refreshRes.data.accessToken);
-            localStorage.setItem('runway_access_token', refreshRes.data.accessToken);
-            setUser(refreshRes.data.user);
-          } catch {
-            setToken(null);
-            setUser(null);
-            localStorage.removeItem('runway_access_token');
-          }
+          // If silent check fails or backend offline, keep local user state
         }
       }
-      setLoading(false);
     };
     initAuth();
-  }, []);
+  }, [token]);
 
   const login = async (email: string, password: string) => {
-    const res = await api.post<AuthResponse>('/auth/login', { email, password });
-    setToken(res.data.accessToken);
-    setUser(res.data.user);
-    localStorage.setItem('runway_access_token', res.data.accessToken);
+    try {
+      const res = await api.post<AuthResponse>('/auth/login', { email, password });
+      setToken(res.data.accessToken);
+      setUser(res.data.user);
+      localStorage.setItem('runway_access_token', res.data.accessToken);
+    } catch (e) {
+      console.error('Login error', e);
+      throw e;
+    }
   };
 
   const signup = async (email: string, password: string) => {
-    const res = await api.post<AuthResponse>('/auth/signup', { email, password });
-    setToken(res.data.accessToken);
-    setUser(res.data.user);
-    localStorage.setItem('runway_access_token', res.data.accessToken);
+    try {
+      const res = await api.post<AuthResponse>('/auth/signup', { email, password });
+      setToken(res.data.accessToken);
+      setUser(res.data.user);
+      localStorage.setItem('runway_access_token', res.data.accessToken);
+    } catch (e) {
+      console.error('Signup error', e);
+      throw e;
+    }
   };
 
   const logout = async () => {
     try {
       await api.post('/auth/logout');
     } catch (e) {
-      console.error(e);
+      // Ignore offline logout errors
     } finally {
       setToken(null);
-      setUser(null);
+      setUser(DEFAULT_LOCAL_USER);
       localStorage.removeItem('runway_access_token');
     }
   };

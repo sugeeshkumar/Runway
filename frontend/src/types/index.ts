@@ -37,6 +37,7 @@ export interface Expense {
   source: ExpenseSource;
   rawInput?: string | null;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export type BudgetStatusType = 'SAFE' | 'APPROACHING' | 'OVER';

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <rect width="512" height="512" rx="128" fill="#FDFBF7"/>
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="none" stroke="#E5E7EB" stroke-width="12"/>
+  <!-- Runway R Logo Terracotta Ink -->
+  <path d="M150 370 V142 H245 C295 142 325 165 325 205 C325 240 300 260 262 266 L345 370 H280 L208 280 H198 V370 H150 Z M198 234 H240 C263 234 275 224 275 206 C275 188 263 180 240 180 H198 V234 Z" fill="#C2410C"/>
+</svg>

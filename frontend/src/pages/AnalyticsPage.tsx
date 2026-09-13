@@ -19,6 +19,8 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
+import * as expenseRepository from '../data/expenseRepository';
+
 interface AnalyticsPageProps {
   userCurrency: string;
   refreshKey?: number;
@@ -34,16 +36,14 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ userCurrency, refr
   const fetchInsights = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<AnalyticsInsights>(
-        `/analytics/insights?period=${period}&granularity=${granularity}`
-      );
-      setInsights(res.data);
+      const data = await expenseRepository.getLocalAnalyticsInsights(period, granularity, userCurrency);
+      setInsights(data);
     } catch (err) {
-      console.error('Failed to load analytics insights', err);
+      console.error('Failed to load analytics insights from local storage', err);
     } finally {
       setLoading(false);
     }
-  }, [period, granularity]);
+  }, [period, granularity, userCurrency]);
 
   useEffect(() => {
     fetchInsights();

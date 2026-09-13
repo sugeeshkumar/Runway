@@ -17,6 +17,7 @@ export const SharedLedgersPage: React.FC<SharedLedgersPageProps> = ({
   const shouldReduceMotion = useReducedMotion();
   const [ledgers, setLedgers] = useState<SharedLedger[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [errorNotice, setErrorNotice] = useState<string | null>(null);
   const [selectedLedger, setSelectedLedger] = useState<SharedLedger | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -24,11 +25,13 @@ export const SharedLedgersPage: React.FC<SharedLedgersPageProps> = ({
 
   const fetchLedgers = useCallback(async () => {
     setLoading(true);
+    setErrorNotice(null);
     try {
       const res = await api.get<SharedLedger[]>('/ledgers');
       setLedgers(res.data);
     } catch (err) {
-      console.error('Failed to load shared ledgers', err);
+      console.warn('Failed to load shared ledgers (backend offline)', err);
+      setErrorNotice('Shared Trip & Event Ledgers require an active backend server connection.');
     } finally {
       setLoading(false);
     }
@@ -76,6 +79,12 @@ export const SharedLedgersPage: React.FC<SharedLedgersPageProps> = ({
           <span>New Shared Ledger</span>
         </button>
       </div>
+
+      {errorNotice && (
+        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs font-semibold">
+          {errorNotice}
+        </div>
+      )}
 
       {/* Search & Status Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

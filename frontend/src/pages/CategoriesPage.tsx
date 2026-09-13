@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Category } from '../types';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { ReassignCategoryModal } from '../components/ReassignCategoryModal';
-import api from '../api/client';
+import * as categoryRepository from '../data/categoryRepository';
 import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 
 interface CategoriesPageProps {
@@ -44,14 +44,14 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
 
     setAdding(true);
     try {
-      await api.post('/categories', {
+      await categoryRepository.createCategory({
         name: newCatName.trim(),
         color: newCatColor,
       });
       setNewCatName('');
       onCategoriesUpdated();
     } catch (err) {
-      console.error('Failed to create category', err);
+      console.error('Failed to create category in local storage', err);
     } finally {
       setAdding(false);
     }
@@ -69,14 +69,14 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({
 
     setSavingEdit(true);
     try {
-      await api.put(`/categories/${editingCat.id}`, {
+      await categoryRepository.updateCategory(editingCat.id, {
         name: editName.trim(),
         color: editColor,
       });
       setEditingCat(null);
       onCategoriesUpdated();
     } catch (err) {
-      console.error('Failed to update category', err);
+      console.error('Failed to update category in local storage', err);
     } finally {
       setSavingEdit(false);
     }

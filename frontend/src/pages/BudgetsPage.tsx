@@ -5,7 +5,7 @@ import { ProgressRing } from '../components/ProgressRing';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { BudgetModal } from '../components/BudgetModal';
 import { formatCurrency } from '../utils/currency';
-import api from '../api/client';
+import * as budgetRepository from '../data/budgetRepository';
 import { Plus, Edit2, Trash2, Tag, ArrowRight, Sparkles } from 'lucide-react';
 
 interface BudgetsPageProps {
@@ -33,8 +33,8 @@ export const BudgetsPage: React.FC<BudgetsPageProps> = ({
 
   const fetchBudgets = useCallback(async () => {
     try {
-      const res = await api.get<Budget[]>(`/budgets?month=${periodMonth}`);
-      setBudgets(res.data);
+      const data = await budgetRepository.getBudgets(periodMonth);
+      setBudgets(data);
     } catch (err) {
       console.error('Failed to load budgets', err);
     } finally {
@@ -63,7 +63,7 @@ export const BudgetsPage: React.FC<BudgetsPageProps> = ({
   const handleDeleteBudget = async (budgetId: string) => {
     if (!window.confirm('Are you sure you want to remove this budget limit?')) return;
     try {
-      await api.delete(`/budgets/${budgetId}`);
+      await budgetRepository.deleteBudget(budgetId);
       fetchBudgets();
     } catch (err) {
       console.error('Failed to delete budget limit', err);

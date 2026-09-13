@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RecurringTemplate, CommittedSummary, Category } from '../types';
 import { formatCurrency } from '../utils/currency';
-import api from '../api/client';
+import * as recurringRepository from '../data/recurringRepository';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { CreateRecurringModal } from '../components/CreateRecurringModal';
 import {
@@ -42,32 +42,29 @@ export const RecurringExpensesPage: React.FC<RecurringExpensesPageProps> = ({
     try {
       setLoading(true);
       const [resTemplates, resSummary] = await Promise.all([
-        api.get<RecurringTemplate[]>('/recurring'),
-        api.get<CommittedSummary>('/recurring/committed-summary'),
+        recurringRepository.getRecurringExpenses(),
+        recurringRepository.getCommittedSummary(userCurrency),
       ]);
-      setTemplates(resTemplates.data);
-      setCommittedSummary(resSummary.data);
+      setTemplates(resTemplates);
+      setCommittedSummary(resSummary);
     } catch (err) {
       console.error('Failed to load recurring data', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userCurrency]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   const handleTogglePause = async (id: string) => {
-    const targetTemplate = templates.find((t) => t.id === id);
-    const targetStatus = targetTemplate?.isPaused ? 'ACTIVE' : 'PAUSED';
-
     // Optimistic UI update
     setTemplates((prev) =>
       prev.map((t) => (t.id === id ? { ...t, isPaused: !t.isPaused } : t))
     );
     try {
-      await api.patch(`/recurring/${id}/status`, { status: targetStatus });
+      await recurringRepository.togglePauseRecurringExpense(id);
       await fetchData();
     } catch (err) {
       console.error('Failed to toggle pause state', err);
@@ -79,7 +76,7 @@ export const RecurringExpensesPage: React.FC<RecurringExpensesPageProps> = ({
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this recurring template?')) return;
     try {
-      await api.delete(`/recurring/${id}`);
+      await recurringRepository.deleteRecurringExpense(id);
       fetchData();
     } catch (err) {
       console.error('Failed to delete template', err);
@@ -89,8 +86,8 @@ export const RecurringExpensesPage: React.FC<RecurringExpensesPageProps> = ({
   const handleProcessNow = async () => {
     try {
       setProcessing(true);
-      const res = await api.post<{ generatedCount: number; message: string }>('/recurring/process?force=true');
-      setToastMessage(res.data.message || `Processed recurring expenses!`);
+      const res = await recurringRepository.processDueRecurringExpenses(true);
+      setToastMessage(res.message || `Processed recurring expenses!`);
       fetchData();
       setTimeout(() => setToastMessage(null), 4000);
     } catch (err) {

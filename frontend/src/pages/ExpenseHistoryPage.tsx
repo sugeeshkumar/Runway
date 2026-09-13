@@ -12,6 +12,8 @@ interface ExpenseHistoryPageProps {
   refreshKey?: number;
 }
 
+import * as expenseRepository from '../data/expenseRepository';
+
 export const ExpenseHistoryPage: React.FC<ExpenseHistoryPageProps> = ({
   categories,
   onExpenseAddedOrUpdated,
@@ -25,10 +27,10 @@ export const ExpenseHistoryPage: React.FC<ExpenseHistoryPageProps> = ({
 
   const fetchExpenses = async () => {
     try {
-      const res = await api.get<Expense[]>('/expenses');
-      setExpenses(res.data);
+      const data = await expenseRepository.getExpenses();
+      setExpenses(data);
     } catch (err) {
-      console.error('Failed to load expenses history', err);
+      console.error('Failed to load expenses history from local storage', err);
     } finally {
       setLoading(false);
     }
